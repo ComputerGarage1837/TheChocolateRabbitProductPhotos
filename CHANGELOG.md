@@ -2,6 +2,13 @@
 
 Each `## vX.Y.Z` section becomes the release notes for that version.
 
+## v1.0.3 — 2026-09-19
+
+### Changed
+- First release signed with the shop's permanent key. Install this one over the top of any
+  earlier version after uninstalling it once; every version after this installs as a normal
+  update.
+
 ## v1.0.2 — 2026-09-19
 
 ### Improved
