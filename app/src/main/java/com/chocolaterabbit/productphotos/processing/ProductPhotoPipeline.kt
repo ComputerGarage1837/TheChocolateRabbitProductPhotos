@@ -43,13 +43,14 @@ class ProcessedPhoto(
 class BatchResult(
     val plainFile: File,
     val enhancedFile: File,
+    val originalFile: File,
     val plainThumb: Bitmap,
     val enhancedThumb: Bitmap,
     val originalThumb: Bitmap,
 ) {
     fun file(enhanced: Boolean) = if (enhanced) enhancedFile else plainFile
     fun thumb(enhanced: Boolean) = if (enhanced) enhancedThumb else plainThumb
-    fun deleteFiles() { plainFile.delete(); enhancedFile.delete() }
+    fun deleteFiles() { plainFile.delete(); enhancedFile.delete(); originalFile.delete() }
 }
 
 /** Photo in -> background removed -> (optional product clean-up) -> placed on template. */
@@ -69,9 +70,11 @@ class ProductPhotoPipeline(
         val enhanced = processed.render(enhanced = true, brightness = 0)
         val plainFile = File(dir, "$id-plain.png").also { f -> FileOutputStream(f).use { plain.compress(Bitmap.CompressFormat.PNG, 100, it) } }
         val enhancedFile = File(dir, "$id-enhanced.png").also { f -> FileOutputStream(f).use { enhanced.compress(Bitmap.CompressFormat.PNG, 100, it) } }
+        val originalFile = File(dir, "$id-original.jpg").also { f -> FileOutputStream(f).use { processed.original.compress(Bitmap.CompressFormat.JPEG, 95, it) } }
         val result = BatchResult(
             plainFile = plainFile,
             enhancedFile = enhancedFile,
+            originalFile = originalFile,
             plainThumb = Bitmap.createScaledBitmap(plain, THUMB, THUMB, true),
             enhancedThumb = Bitmap.createScaledBitmap(enhanced, THUMB, THUMB, true),
             originalThumb = Bitmap.createScaledBitmap(processed.original, THUMB, THUMB, true),

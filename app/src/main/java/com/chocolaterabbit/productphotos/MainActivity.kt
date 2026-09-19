@@ -38,10 +38,11 @@ object Routes {
     const val CAMERA = "camera"
     const val SETTINGS = "settings"
     const val BATCH = "batch"
-    const val EDIT = "edit/{uri}"
+    const val EDIT = "edit/{uri}?replace={replace}"
     const val VIEWER = "viewer/{path}"
 
-    fun edit(uri: Uri) = "edit/${Uri.encode(uri.toString())}"
+    fun edit(uri: Uri, replacePath: String? = null) =
+        "edit/${Uri.encode(uri.toString())}" + (replacePath?.let { "?replace=${Uri.encode(it)}" } ?: "")
     fun viewer(path: String) = "viewer/${Uri.encode(path)}"
 }
 
@@ -73,11 +74,16 @@ fun AppNavigation(container: AppContainer) {
         }
         composable(
             Routes.EDIT,
-            arguments = listOf(navArgument("uri") { type = NavType.StringType })
+            arguments = listOf(
+                navArgument("uri") { type = NavType.StringType },
+                navArgument("replace") { type = NavType.StringType; nullable = true; defaultValue = null },
+            )
         ) { entry ->
             val uri = Uri.parse(Uri.decode(entry.arguments?.getString("uri") ?: ""))
+            val replace = entry.arguments?.getString("replace")?.let { Uri.decode(it) }
             EditScreen(
                 photoUri = uri,
+                replacePath = replace,
                 container = c,
                 onSaved = { nav.popBackStack(Routes.HOME, inclusive = false) },
                 onRetake = { nav.navigate(Routes.CAMERA) { popUpTo(Routes.HOME) } },
@@ -93,6 +99,10 @@ fun AppNavigation(container: AppContainer) {
                 path = path,
                 photoStore = c.photos,
                 onBack = { nav.popBackStack() },
+                onEdit = { photo ->
+                    val source = c.photos.originalFor(photo) ?: photo.file
+                    nav.navigate(Routes.edit(Uri.fromFile(source), replacePath = photo.file.absolutePath))
+                },
             )
         }
         composable(Routes.BATCH) {

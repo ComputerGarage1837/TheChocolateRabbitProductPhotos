@@ -27,6 +27,11 @@ data class SavedPhoto(val file: File) {
 class PhotoStore(private val context: Context) {
 
     private val dir: File get() = File(context.filesDir, "edited").apply { mkdirs() }
+    private val originalsDir: File get() = File(context.filesDir, "originals").apply { mkdirs() }
+
+    /** The photo as taken (square crop), kept so a saved photo can be edited again. Null for old photos. */
+    fun originalFor(photo: SavedPhoto): File? =
+        File(originalsDir, photo.name + ".jpg").takeIf { it.exists() }
 
     fun listPhotos(): List<SavedPhoto> =
         dir.listFiles { f -> f.isFile && f.extension.equals("png", true) }
@@ -35,21 +40,37 @@ class PhotoStore(private val context: Context) {
             ?: emptyList()
 
     /** Saves as lossless PNG so repeated edits/exports never degrade the product. */
-    fun save(bitmap: Bitmap, alsoToDeviceGallery: Boolean): SavedPhoto {
-        val stamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+    fun save(bitmap: Bitmap, alsoToDeviceGallery: Boolean, original: Bitmap? = null): SavedPhoto {
+        val stamp = SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.US).format(Date())
         val file = File(dir, "product_$stamp.png")
         FileOutputStream(file).use { out -> bitmap.compress(Bitmap.CompressFormat.PNG, 100, out) }
+        if (original != null) {
+            FileOutputStream(File(originalsDir, "product_$stamp.jpg")).use { out ->
+                original.compress(Bitmap.CompressFormat.JPEG, 95, out)
+            }
+        }
         if (alsoToDeviceGallery) {
             runCatching { exportToMediaStore(bitmap, file.nameWithoutExtension) }
         }
         return SavedPhoto(file)
     }
 
+    /** Overwrites an existing photo with a re-edited version (the original is kept). */
+    fun replace(photo: SavedPhoto, bitmap: Bitmap, alsoToDeviceGallery: Boolean): SavedPhoto {
+        FileOutputStream(photo.file).use { out -> bitmap.compress(Bitmap.CompressFormat.PNG, 100, out) }
+        if (alsoToDeviceGallery) {
+            val stamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+            runCatching { exportToMediaStore(bitmap, photo.name + "_edit" + stamp) }
+        }
+        return photo
+    }
+
     /** Saves an already-rendered PNG (used by batch mode) into the gallery. */
-    fun saveFile(source: File, alsoToDeviceGallery: Boolean): SavedPhoto {
+    fun saveFile(source: File, alsoToDeviceGallery: Boolean, original: File? = null): SavedPhoto {
         val stamp = SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.US).format(Date())
         val file = File(dir, "product_$stamp.png")
         source.copyTo(file, overwrite = true)
+        original?.copyTo(File(originalsDir, "product_$stamp.jpg"), overwrite = true)
         if (alsoToDeviceGallery) {
             runCatching {
                 val bmp = android.graphics.BitmapFactory.decodeFile(file.absolutePath)
@@ -61,6 +82,7 @@ class PhotoStore(private val context: Context) {
 
     fun delete(photo: SavedPhoto) {
         photo.file.delete()
+        File(originalsDir, photo.name + ".jpg").delete()
     }
 
     fun shareUri(photo: SavedPhoto): Uri =

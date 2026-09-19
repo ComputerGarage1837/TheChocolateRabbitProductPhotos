@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -47,7 +48,7 @@ import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PhotoViewerScreen(path: String, photoStore: PhotoStore, onBack: () -> Unit) {
+fun PhotoViewerScreen(path: String, photoStore: PhotoStore, onBack: () -> Unit, onEdit: (SavedPhoto) -> Unit) {
     val context = LocalContext.current
     val photo = remember(path) { SavedPhoto(File(path)) }
     var confirmDelete by remember { mutableStateOf(false) }
@@ -70,6 +71,7 @@ fun PhotoViewerScreen(path: String, photoStore: PhotoStore, onBack: () -> Unit) 
                     IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
                 },
                 actions = {
+                    IconButton(onClick = { onEdit(photo) }) { Icon(Icons.Default.Edit, contentDescription = "Edit again") }
                     IconButton(onClick = { share() }) { Icon(Icons.Default.Share, contentDescription = "Share") }
                     IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Default.Delete, contentDescription = "Delete") }
                 },
@@ -98,8 +100,15 @@ fun PhotoViewerScreen(path: String, photoStore: PhotoStore, onBack: () -> Unit) 
                 modifier = Modifier.padding(top = 12.dp),
             )
             Box(Modifier.weight(1f))
+            Text(
+                if (photoStore.originalFor(photo) != null) "Edit again starts from the original photo."
+                else "Edit again re-runs the cut-out on this saved photo (the original was not kept for photos from older versions).",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(bottom = 8.dp),
+            )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedButton(onClick = { confirmDelete = true }, modifier = Modifier.weight(1f)) { Text("Delete") }
+                OutlinedButton(onClick = { onEdit(photo) }, modifier = Modifier.weight(1f)) { Text("Edit again") }
                 Button(onClick = { share() }, modifier = Modifier.weight(1f)) { Text("Share") }
             }
         }

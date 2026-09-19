@@ -116,7 +116,7 @@ fun BatchScreen(uris: List<Uri>, container: AppContainer, onDone: () -> Unit) {
             withContext(Dispatchers.IO) {
                 items.forEach { item ->
                     val done = item.state as? ItemState.Done ?: return@forEach
-                    container.photos.saveFile(done.result.file(item.useEnhanced), settings.saveToDeviceGallery)
+                    container.photos.saveFile(done.result.file(item.useEnhanced), settings.saveToDeviceGallery, done.result.originalFile)
                 }
             }
             saving = false

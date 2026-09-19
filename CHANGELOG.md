@@ -2,6 +2,14 @@
 
 Each `## vX.Y.Z` section becomes the release notes for that version.
 
+## v1.0.9 — 2026-09-19
+
+### Added
+- Edit saved photos again. Open a photo from the gallery and tap the pencil (or "Edit again").
+  The app keeps the original photo alongside every saved result from this version on, so the
+  edit starts from the real photo; saving replaces the existing photo. Photos saved by older
+  versions can still be re-edited, starting from the saved result.
+
 ## v1.0.8 — 2026-09-19
 
 ### Changed

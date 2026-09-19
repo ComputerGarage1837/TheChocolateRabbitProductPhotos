@@ -77,6 +77,7 @@ private sealed interface EditState {
 fun EditScreen(
     photoUri: Uri,
     container: AppContainer,
+    replacePath: String? = null,
     onSaved: () -> Unit,
     onRetake: () -> Unit,
     onBack: () -> Unit,
@@ -120,7 +121,7 @@ fun EditScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Review") },
+                title = { Text(if (replacePath != null) "Edit again" else "Review") },
                 navigationIcon = {
                     IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "Back") }
                 },
@@ -267,8 +268,11 @@ fun EditScreen(
                     Spacer(Modifier.height(24.dp))
 
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        OutlinedButton(onClick = onRetake, modifier = Modifier.weight(1f), enabled = !saving) {
-                            Text("Retake")
+                        OutlinedButton(
+                            onClick = { if (replacePath != null) onBack() else onRetake() },
+                            modifier = Modifier.weight(1f), enabled = !saving,
+                        ) {
+                            Text(if (replacePath != null) "Cancel" else "Retake")
                         }
                         Button(
                             onClick = {
@@ -276,7 +280,14 @@ fun EditScreen(
                                 saving = true
                                 scope.launch {
                                     withContext(Dispatchers.IO) {
-                                        container.photos.save(toSave, settings.saveToDeviceGallery)
+                                        if (replacePath != null) {
+                                            container.photos.replace(
+                                                com.chocolaterabbit.productphotos.data.SavedPhoto(java.io.File(replacePath)),
+                                                toSave, settings.saveToDeviceGallery,
+                                            )
+                                        } else {
+                                            container.photos.save(toSave, settings.saveToDeviceGallery, s.photo.original)
+                                        }
                                     }
                                     saving = false
                                     onSaved()
