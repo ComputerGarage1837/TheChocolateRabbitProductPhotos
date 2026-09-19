@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.ChocolateRabbit" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/cream</item>
+        <item name="android:statusBarColor">@color/cocoa</item>
+        <item name="android:navigationBarColor">@color/cocoa</item>
+    </style>
+</resources>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- simple rabbit silhouette in cocoa -->
+    <path android:fillColor="#4A2C1A"
+        android:pathData="M40,30 c-4,-14 2,-20 6,-12 c2,4 3,10 3,16 c2,-1 4,-1 6,-1 c2,0 4,0 6,1 c0,-6 1,-12 3,-16 c4,-8 10,-2 6,12 c-2,6 -4,9 -6,11 c6,3 10,9 10,16 c0,11 -9,19 -19,19 c-10,0 -19,-8 -19,-19 c0,-7 4,-13 10,-16 c-2,-2 -4,-5 -6,-11z" />
+</vector>
