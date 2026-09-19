@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "packageName": "com.chocolaterabbit.productphotos",
-  "versionName": "1.0.8",
-  "versionCode": 10008,
+  "versionName": "1.0.9",
+  "versionCode": 10009,
   "apk": {
-    "assetName": "Chocolate-Rabbit-Product-Photos-1.0.8.apk",
-    "sha256": "0ac5e0f40b332262b59374ceb719405aaa60e2041cac6b96f164774c5362d77f",
+    "assetName": "Chocolate-Rabbit-Product-Photos-1.0.9.apk",
+    "sha256": "5268a445689aae22d1b724191e708a56b3d3581f10cf7361ba44b9325668a878",
     "sizeBytes": 210794101
   }
 }
