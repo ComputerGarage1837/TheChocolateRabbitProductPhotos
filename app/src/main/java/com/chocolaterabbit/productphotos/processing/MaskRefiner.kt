@@ -33,12 +33,18 @@ object MaskRefiner {
         val closeFraction: Float // gap-closing radius (fraction of side)
         /** Colour-based reclaim is only for plain backdrops; on a busy background it pulls in clutter. */
         val useBackdropReclaim: Boolean
+        /** Narrow-band edge repair (see EdgeReclaim); null = off. */
+        val edge: EdgeReclaim.Params?
+        /** Gap closing bridges concave corners with background; only for Generous. */
+        val useClosing: Boolean
 
         init {
             when (sensitivity.coerceIn(0, 2)) {
-                0 -> { mlLow = 0.45f; mlHigh = 0.75f; colourNear = 4.0f; colourFar = 7.0f; reachFraction = 0.10f; closeFraction = 0.004f; useBackdropReclaim = false }
-                2 -> { mlLow = 0.15f; mlHigh = 0.45f; colourNear = 2.8f; colourFar = 5.0f; reachFraction = 0.20f; closeFraction = 0.010f; useBackdropReclaim = true }
-                else -> { mlLow = 0.30f; mlHigh = 0.60f; colourNear = 3.0f; colourFar = 5.5f; reachFraction = 0.15f; closeFraction = 0.006f; useBackdropReclaim = false }
+                0 -> { mlLow = 0.45f; mlHigh = 0.75f; colourNear = 4.0f; colourFar = 7.0f; reachFraction = 0.10f; closeFraction = 0.004f; useBackdropReclaim = false; edge = null; useClosing = false }
+                2 -> { mlLow = 0.15f; mlHigh = 0.45f; colourNear = 2.8f; colourFar = 5.0f; reachFraction = 0.20f; closeFraction = 0.010f; useBackdropReclaim = true
+                       edge = EdgeReclaim.Params(radius = 0, absDistance = 30f, ratio = 0.55f, passes = 3, confFloor = 0.0f); useClosing = true }
+                else -> { mlLow = 0.30f; mlHigh = 0.60f; colourNear = 3.0f; colourFar = 5.5f; reachFraction = 0.15f; closeFraction = 0.006f; useBackdropReclaim = false
+                       edge = EdgeReclaim.Params(radius = 0, absDistance = 26f, ratio = 0.45f, passes = 2, confFloor = 0.05f); useClosing = false }
             }
         }
     }
@@ -52,8 +58,21 @@ object MaskRefiner {
         val ml = FloatArray(n) { i -> smoothstep(confidence[i], tuning.mlLow, tuning.mlHigh) }
         val mlHard = BooleanArray(n) { ml[it] > 0.5f }
 
-        // 2 + 3. Backdrop model and reclaim of connected non-backdrop pixels.
+        // 2a. Narrow-band edge repair.
         val grown = ml.copyOf()
+        tuning.edge?.let { e ->
+            val radius = max(3, (side * 0.025f).toInt())
+            val params = EdgeReclaim.Params(radius, e.absDistance, e.ratio, e.passes, e.confFloor)
+            val added = EdgeReclaim.compute(pixels, confidence, mlHard, w, h, params)
+            // Opening (erode then dilate) shaves thin jagged protrusions off the reclaimed strip
+            // while a strip wider than the radius survives intact.
+            val union = BooleanArray(n) { i -> mlHard[i] || added[i] }
+            val openRadius = max(2, (side * 0.006f).toInt())
+            val opened = dilate(erode(union, w, h, openRadius), w, h, openRadius)
+            for (i in 0 until n) if (added[i] && opened[i]) { grown[i] = 1f; mlHard[i] = true }
+        }
+
+        // 2b. Backdrop model and reclaim of connected non-backdrop pixels.
         val backdrop = if (tuning.useBackdropReclaim) Backdrop.learn(confidence, pixels, w, h) else null
         if (backdrop != null) {
             val colourAlpha = FloatArray(n) { i -> smoothstep(backdrop.distance(pixels[i]), tuning.colourNear, tuning.colourFar) }
@@ -69,10 +88,10 @@ object MaskRefiner {
             }
         }
 
-        // 4. Close gaps and fill holes in the outline.
+        // 4. (Optionally) close gaps, and fill enclosed holes in the outline.
         val hard = BooleanArray(n) { grown[it] > 0.5f }
         val closeRadius = max(1, (side * tuning.closeFraction).toInt())
-        val closed = erode(dilate(hard, w, h, closeRadius), w, h, closeRadius)
+        val closed = if (tuning.useClosing) erode(dilate(hard, w, h, closeRadius), w, h, closeRadius) else hard
         val filled = fillHoles(closed, w, h, maxHoleFraction = 0.25f)
         for (i in 0 until n) if (filled[i] && !hard[i]) grown[i] = 1f
 

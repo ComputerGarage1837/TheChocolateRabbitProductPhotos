@@ -2,6 +2,16 @@
 
 Each `## vX.Y.Z` section becomes the release notes for that version.
 
+## v1.0.7 — 2026-09-19
+
+### Improved
+- Edge repair. Where the model cuts slightly inside the product along one edge (typically a
+  dark product against a dark background), pixels just outside the outline that clearly match
+  the product colour next to them, and clearly do not match the background further out, are
+  reclaimed. Kept to a narrow band so it cannot run off into the background.
+- Removed the gap-closing step from Balanced and Tight: it could paint a wedge of background
+  into a concave corner of the product.
+
 ## v1.0.6 — 2026-09-19
 
 ### Added
