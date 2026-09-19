@@ -25,6 +25,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -129,6 +132,25 @@ fun SettingsScreen(container: AppContainer, onBack: () -> Unit) {
             }
             message?.let {
                 Text(it, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
+            }
+
+            HorizontalDivider(Modifier.padding(vertical = 24.dp))
+
+            Text("Cut-out sensitivity", style = MaterialTheme.typography.titleSmall)
+            Text(
+                "If parts of a product are being cut off, choose Generous. If bits of background are left in, choose Tight.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Spacer(Modifier.height(8.dp))
+            val labels = listOf("Tight", "Balanced", "Generous")
+            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                labels.forEachIndexed { index, label ->
+                    SegmentedButton(
+                        selected = settings.cutoutSensitivity == index,
+                        onClick = { scope.launch { container.settings.setCutoutSensitivity(index) } },
+                        shape = SegmentedButtonDefaults.itemShape(index = index, count = labels.size),
+                    ) { Text(label) }
+                }
             }
 
             HorizontalDivider(Modifier.padding(vertical = 24.dp))

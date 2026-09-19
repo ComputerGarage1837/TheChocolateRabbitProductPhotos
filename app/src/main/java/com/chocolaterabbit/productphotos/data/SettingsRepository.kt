@@ -24,6 +24,8 @@ data class AppSettings(
     val productFillPercent: Int = 80,
     /** Also copy saved photos into the phone's shared Pictures folder. */
     val saveToDeviceGallery: Boolean = true,
+    /** 0 = tight, 1 = balanced, 2 = generous. Generous keeps more of the product at the edges. */
+    val cutoutSensitivity: Int = 1,
 )
 
 class SettingsRepository(private val context: Context) {
@@ -34,6 +36,7 @@ class SettingsRepository(private val context: Context) {
         val AUTO_FIT = booleanPreferencesKey("auto_fit_product")
         val FILL_PERCENT = intPreferencesKey("product_fill_percent")
         val SAVE_TO_GALLERY = booleanPreferencesKey("save_to_device_gallery")
+        val CUTOUT_SENSITIVITY = intPreferencesKey("cutout_sensitivity")
     }
 
     val settings: Flow<AppSettings> = context.dataStore.data.map { p ->
@@ -43,6 +46,7 @@ class SettingsRepository(private val context: Context) {
             autoFitProduct = p[Keys.AUTO_FIT] ?: true,
             productFillPercent = p[Keys.FILL_PERCENT] ?: 80,
             saveToDeviceGallery = p[Keys.SAVE_TO_GALLERY] ?: true,
+            cutoutSensitivity = p[Keys.CUTOUT_SENSITIVITY] ?: 1,
         )
     }
 
@@ -60,4 +64,7 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setSaveToDeviceGallery(value: Boolean) =
         context.dataStore.edit { it[Keys.SAVE_TO_GALLERY] = value }
+
+    suspend fun setCutoutSensitivity(value: Int) =
+        context.dataStore.edit { it[Keys.CUTOUT_SENSITIVITY] = value.coerceIn(0, 2) }
 }

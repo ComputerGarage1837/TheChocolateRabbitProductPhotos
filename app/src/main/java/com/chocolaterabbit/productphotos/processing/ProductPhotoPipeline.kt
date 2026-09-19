@@ -41,7 +41,7 @@ class ProductPhotoPipeline(
 
     suspend fun process(photo: Uri, settings: AppSettings): ProcessedPhoto = withContext(Dispatchers.Default) {
         val square = ImageLoader.loadSquare(context, photo)
-        val cutout = remover.cutOut(square)
+        val cutout = remover.cutOut(square, settings.cutoutSensitivity)
         val template = templateStore.loadTemplate(settings.useCustomTemplate)
         val bounds = if (settings.autoFitProduct) Compositor.subjectBounds(cutout) else null
         ProcessedPhoto(

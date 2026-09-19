@@ -2,6 +2,16 @@
 
 Each `## vX.Y.Z` section becomes the release notes for that version.
 
+## v1.0.2 — 2026-09-19
+
+### Improved
+- Much better product outlines. The cut-out no longer relies on the model's guess alone: it
+  learns the background colour from the photo and reclaims any nearby pixels that clearly are
+  not background (thin parts, ribbons, shiny or light edges the model missed), then snaps the
+  edge to the real edges in the photo and removes stray specks.
+- New "Cut-out sensitivity" setting (Tight / Balanced / Generous) for products that still get
+  clipped or that keep bits of background.
+
 ## v1.0.1 — 2026-09-19
 
 ### Fixed
