@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.Collections
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -69,6 +70,7 @@ fun HomeScreen(
     settings: SettingsRepository,
     onTakePhoto: () -> Unit,
     onPhotoPicked: (Uri) -> Unit,
+    onBatchPicked: (List<Uri>) -> Unit,
     onOpenPhoto: (SavedPhoto) -> Unit,
     onOpenSettings: () -> Unit,
 ) {
@@ -85,6 +87,9 @@ fun HomeScreen(
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) onPhotoPicked(uri)
+    }
+    val batchPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(100)) { uris ->
+        if (uris.isNotEmpty()) onBatchPicked(uris)
     }
 
     Scaffold(
@@ -105,6 +110,16 @@ fun HomeScreen(
         },
         floatingActionButton = {
             Column(horizontalAlignment = Alignment.End) {
+                ExtendedFloatingActionButton(
+                    onClick = {
+                        batchPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    },
+                    containerColor = MaterialTheme.colorScheme.secondary,
+                    contentColor = MaterialTheme.colorScheme.onSecondary,
+                    icon = { Icon(Icons.Default.Collections, contentDescription = null) },
+                    text = { Text("Batch") },
+                )
+                Spacer(Modifier.height(12.dp))
                 SmallFloatingActionButton(
                     onClick = {
                         picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
@@ -130,7 +145,7 @@ fun HomeScreen(
         if (photos.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
                 Text(
-                    "No product photos yet.\n\nTap \"Take photo\" to shoot one, or the gallery button to use a photo already on this phone.",
+                    "No product photos yet.\n\nTap \"Take photo\" to shoot one, the gallery button to use a photo already on this phone, or \"Batch\" to do many at once.",
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.bodyLarge,
                 )

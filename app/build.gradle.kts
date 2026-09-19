@@ -29,6 +29,9 @@ android {
         versionCode = versionCodeFrom(versionNameProp)
         versionName = versionNameProp
 
+        // Phones only: ship the 64-bit ARM runtime alone (saves ~60 MB of APK).
+        ndk { abiFilters += listOf("arm64-v8a") }
+
         buildConfigField("String", "GITHUB_REPO", "\"${prop("GITHUB_REPO", "ComputerGarage1837/TheChocolateRabbitProductPhotos")}\"")
     }
 

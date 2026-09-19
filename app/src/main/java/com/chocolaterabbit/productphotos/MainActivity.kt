@@ -12,6 +12,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.chocolaterabbit.productphotos.ui.screens.BatchScreen
 import com.chocolaterabbit.productphotos.ui.screens.CameraScreen
 import com.chocolaterabbit.productphotos.ui.screens.EditScreen
 import com.chocolaterabbit.productphotos.ui.screens.HomeScreen
@@ -36,6 +37,7 @@ object Routes {
     const val HOME = "home"
     const val CAMERA = "camera"
     const val SETTINGS = "settings"
+    const val BATCH = "batch"
     const val EDIT = "edit/{uri}"
     const val VIEWER = "viewer/{path}"
 
@@ -56,6 +58,7 @@ fun AppNavigation(container: AppContainer) {
                 settings = c.settings,
                 onTakePhoto = { nav.navigate(Routes.CAMERA) },
                 onPhotoPicked = { uri -> nav.navigate(Routes.edit(uri)) },
+                onBatchPicked = { uris -> c.pendingBatch = uris; nav.navigate(Routes.BATCH) },
                 onOpenPhoto = { photo -> nav.navigate(Routes.viewer(photo.file.absolutePath)) },
                 onOpenSettings = { nav.navigate(Routes.SETTINGS) },
             )
@@ -90,6 +93,13 @@ fun AppNavigation(container: AppContainer) {
                 path = path,
                 photoStore = c.photos,
                 onBack = { nav.popBackStack() },
+            )
+        }
+        composable(Routes.BATCH) {
+            BatchScreen(
+                uris = c.pendingBatch,
+                container = c,
+                onDone = { nav.popBackStack(Routes.HOME, inclusive = false) },
             )
         }
         composable(Routes.SETTINGS) {

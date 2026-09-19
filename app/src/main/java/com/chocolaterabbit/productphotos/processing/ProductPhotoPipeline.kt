@@ -8,6 +8,8 @@ import com.chocolaterabbit.productphotos.data.AppSettings
 import com.chocolaterabbit.productphotos.data.TemplateStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
 
 /**
  * Everything needed to render the finished photo with any combination of the user's two
@@ -34,6 +36,22 @@ class ProcessedPhoto(
         )
 }
 
+/**
+ * A batch-processed photo: both versions already rendered to PNG files in the cache (so that a
+ * large batch does not hold dozens of full-size bitmaps in memory) plus small previews.
+ */
+class BatchResult(
+    val plainFile: File,
+    val enhancedFile: File,
+    val plainThumb: Bitmap,
+    val enhancedThumb: Bitmap,
+    val originalThumb: Bitmap,
+) {
+    fun file(enhanced: Boolean) = if (enhanced) enhancedFile else plainFile
+    fun thumb(enhanced: Boolean) = if (enhanced) enhancedThumb else plainThumb
+    fun deleteFiles() { plainFile.delete(); enhancedFile.delete() }
+}
+
 /** Photo in -> background removed -> (optional product clean-up) -> placed on template. */
 class ProductPhotoPipeline(
     private val context: Context,
@@ -41,6 +59,26 @@ class ProductPhotoPipeline(
     model: ModelInstaller,
 ) {
     private val remover = BackgroundRemover { model.segmenter }
+    private val THUMB = 400
+
+    /** Batch variant: renders both versions straight to PNG files and keeps only thumbnails. */
+    suspend fun processToFiles(photo: Uri, settings: AppSettings, id: String): BatchResult = withContext(Dispatchers.Default) {
+        val processed = process(photo, settings)
+        val dir = File(context.cacheDir, "batch").apply { mkdirs() }
+        val plain = processed.render(enhanced = false, brightness = 0)
+        val enhanced = processed.render(enhanced = true, brightness = 0)
+        val plainFile = File(dir, "$id-plain.png").also { f -> FileOutputStream(f).use { plain.compress(Bitmap.CompressFormat.PNG, 100, it) } }
+        val enhancedFile = File(dir, "$id-enhanced.png").also { f -> FileOutputStream(f).use { enhanced.compress(Bitmap.CompressFormat.PNG, 100, it) } }
+        val result = BatchResult(
+            plainFile = plainFile,
+            enhancedFile = enhancedFile,
+            plainThumb = Bitmap.createScaledBitmap(plain, THUMB, THUMB, true),
+            enhancedThumb = Bitmap.createScaledBitmap(enhanced, THUMB, THUMB, true),
+            originalThumb = Bitmap.createScaledBitmap(processed.original, THUMB, THUMB, true),
+        )
+        plain.recycle(); enhanced.recycle(); processed.original.recycle()
+        result
+    }
 
     suspend fun process(photo: Uri, settings: AppSettings): ProcessedPhoto = withContext(Dispatchers.Default) {
         val square = ImageLoader.loadSquare(context, photo)

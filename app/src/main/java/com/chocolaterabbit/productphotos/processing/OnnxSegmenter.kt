@@ -3,7 +3,6 @@ package com.chocolaterabbit.productphotos.processing
 import ai.onnxruntime.OnnxTensor
 import ai.onnxruntime.OrtEnvironment
 import ai.onnxruntime.OrtSession
-import android.graphics.Bitmap
 import java.io.File
 import java.nio.FloatBuffer
 
@@ -11,12 +10,14 @@ import java.nio.FloatBuffer
  * Runs the ISNet "general use" dichotomous image segmentation model (Apache-2.0, from the DIS
  * project) with ONNX Runtime. Input is a fixed 1024x1024 RGB image; output is a per-pixel
  * foreground probability at the same size, which we resample back to the photo's size.
+ *
+ * Pure Kotlin on purpose (pixels in, floats out): the same code runs in the JVM test harness.
  */
 class OnnxSegmenter(modelFile: File) {
 
     companion object {
         const val MODEL_FILE = "isnet-general-use.onnx"
-        private const val SIZE = 1024
+        const val SIZE = 1024
     }
 
     private val env: OrtEnvironment = OrtEnvironment.getEnvironment()
@@ -29,20 +30,18 @@ class OnnxSegmenter(modelFile: File) {
     )
     private val inputName: String = session.inputNames.first()
 
-    /** @return foreground confidence 0..1 for every pixel of [square] (row-major, width*height). */
-    fun segment(square: Bitmap): FloatArray {
-        val w = square.width
-        val h = square.height
-
-        // Pre-process: resize to 1024, scale to 0..1, subtract 0.5 (ISNet's normalisation), NCHW.
-        val scaled = Bitmap.createScaledBitmap(square, SIZE, SIZE, true)
-        val px = IntArray(SIZE * SIZE)
-        scaled.getPixels(px, 0, SIZE, 0, 0, SIZE, SIZE)
-        if (scaled !== square) scaled.recycle()
+    /**
+     * @param px ARGB pixels, row-major, w*h.
+     * @return foreground confidence 0..1 for every pixel (row-major, w*h).
+     */
+    fun segment(px: IntArray, w: Int, h: Int): FloatArray {
+        // Pre-process: resize to 1024 (area average), scale to 0..1, subtract 0.5 (ISNet's
+        // normalisation, std 1), lay out as NCHW.
+        val small = resizeArea(px, w, h, SIZE, SIZE)
         val plane = SIZE * SIZE
         val input = FloatArray(3 * plane)
         for (i in 0 until plane) {
-            val c = px[i]
+            val c = small[i]
             input[i] = ((c shr 16) and 0xFF) / 255f - 0.5f
             input[plane + i] = ((c shr 8) and 0xFF) / 255f - 0.5f
             input[2 * plane + i] = (c and 0xFF) / 255f - 0.5f
@@ -65,6 +64,32 @@ class OnnxSegmenter(modelFile: File) {
         for (i in out.indices) out[i] = (out[i] - lo) / range
 
         return resampleBilinear(out, SIZE, SIZE, w, h)
+    }
+
+    /** Area-averaging resize of ARGB pixels (good quality for downscaling, fine for upscaling). */
+    private fun resizeArea(src: IntArray, sw: Int, sh: Int, dw: Int, dh: Int): IntArray {
+        if (sw == dw && sh == dh) return src
+        val dst = IntArray(dw * dh)
+        val xs = sw.toFloat() / dw
+        val ys = sh.toFloat() / dh
+        for (y in 0 until dh) {
+            val y0 = (y * ys).toInt()
+            val y1 = maxOf(y0 + 1, ((y + 1) * ys).toInt().coerceAtMost(sh))
+            for (x in 0 until dw) {
+                val x0 = (x * xs).toInt()
+                val x1 = maxOf(x0 + 1, ((x + 1) * xs).toInt().coerceAtMost(sw))
+                var r = 0; var g = 0; var b = 0; var n = 0
+                for (yy in y0 until y1) {
+                    val row = yy * sw
+                    for (xx in x0 until x1) {
+                        val c = src[row + xx]
+                        r += (c shr 16) and 0xFF; g += (c shr 8) and 0xFF; b += c and 0xFF; n++
+                    }
+                }
+                dst[y * dw + x] = (0xFF shl 24) or ((r / n) shl 16) or ((g / n) shl 8) or (b / n)
+            }
+        }
+        return dst
     }
 
     private fun resampleBilinear(src: FloatArray, sw: Int, sh: Int, dw: Int, dh: Int): FloatArray {

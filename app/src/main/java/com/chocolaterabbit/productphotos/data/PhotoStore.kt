@@ -45,6 +45,20 @@ class PhotoStore(private val context: Context) {
         return SavedPhoto(file)
     }
 
+    /** Saves an already-rendered PNG (used by batch mode) into the gallery. */
+    fun saveFile(source: File, alsoToDeviceGallery: Boolean): SavedPhoto {
+        val stamp = SimpleDateFormat("yyyyMMdd_HHmmss_SSS", Locale.US).format(Date())
+        val file = File(dir, "product_$stamp.png")
+        source.copyTo(file, overwrite = true)
+        if (alsoToDeviceGallery) {
+            runCatching {
+                val bmp = android.graphics.BitmapFactory.decodeFile(file.absolutePath)
+                if (bmp != null) { exportToMediaStore(bmp, file.nameWithoutExtension); bmp.recycle() }
+            }
+        }
+        return SavedPhoto(file)
+    }
+
     fun delete(photo: SavedPhoto) {
         photo.file.delete()
     }

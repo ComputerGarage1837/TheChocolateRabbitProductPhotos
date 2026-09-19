@@ -18,15 +18,22 @@ class BackgroundRemover(private val segmenter: () -> OnnxSegmenter?) {
         val model = segmenter() ?: throw IllegalStateException("The background remover is not loaded yet.")
         val w = square.width
         val h = square.height
-        val confidence = model.segment(square)
         val pixels = IntArray(w * h)
         square.getPixels(pixels, 0, w, 0, 0, w, h)
-        val alpha = MaskRefiner.refine(confidence, pixels, w, h, MaskRefiner.Tuning(sensitivity))
+        val alpha = cutOutAlpha(model, pixels, w, h, sensitivity)
         for (i in pixels.indices) {
             pixels[i] = (alpha[i] shl 24) or (pixels[i] and 0x00FFFFFF)
         }
         return Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).also {
             it.setPixels(pixels, 0, w, 0, 0, w, h)
+        }
+    }
+
+    companion object {
+        /** The whole mask pipeline on plain arrays (shared with the JVM test harness). */
+        fun cutOutAlpha(model: OnnxSegmenter, pixels: IntArray, w: Int, h: Int, sensitivity: Int): IntArray {
+            val confidence = SubjectMask.compute(model, pixels, w, h)
+            return MaskRefiner.refine(confidence, pixels, w, h, MaskRefiner.Tuning(sensitivity))
         }
     }
 }

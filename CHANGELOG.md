@@ -2,6 +2,20 @@
 
 Each `## vX.Y.Z` section becomes the release notes for that version.
 
+## v1.0.6 — 2026-09-19
+
+### Added
+- Batch mode. Tap "Batch" on the home screen, pick any number of photos, and they are processed
+  one after another with the current template and settings. Each photo gets its own
+  "Auto clean-up" switch and a "Show original" switch; "Save all" saves every photo in the
+  version you chose.
+
+### Improved
+- Two-pass background removal: after the first pass, the model runs again zoomed in on the
+  product so it fills the frame, and the two results are blended. Cleaner edges, especially on
+  cluttered backgrounds.
+- APK is about 60 MB smaller: only the 64-bit ARM runtime is included (phones only).
+
 ## v1.0.5 — 2026-09-19
 
 ### Changed
