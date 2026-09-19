@@ -45,6 +45,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import com.chocolaterabbit.productphotos.ui.theme.photoFrame
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import com.chocolaterabbit.productphotos.AppContainer
@@ -194,7 +195,7 @@ private fun BatchRow(number: Int, item: BatchItem, onRemove: () -> Unit) {
     Card(Modifier.fillMaxWidth()) {
         Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
             androidx.compose.foundation.layout.Box(
-                Modifier.size(110.dp).clip(RoundedCornerShape(10.dp)),
+                Modifier.size(110.dp).photoFrame(10.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 when (val s = item.state) {

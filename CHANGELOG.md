@@ -2,6 +2,14 @@
 
 Each `## vX.Y.Z` section becomes the release notes for that version.
 
+## v1.0.8 — 2026-09-19
+
+### Changed
+- Home screen: Batch, From gallery and Take photo are now three uniform buttons in a bar along
+  the bottom.
+- Every photo in the app (gallery tiles, review screen, batch rows, viewer, template preview)
+  has a visible border, since the template is the same cream as the app background.
+
 ## v1.0.7 — 2026-09-19
 
 ### Improved

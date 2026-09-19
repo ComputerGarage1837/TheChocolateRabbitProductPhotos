@@ -49,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import com.chocolaterabbit.productphotos.ui.theme.photoFrame
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -185,13 +186,13 @@ fun EditScreen(
                                 Image(
                                     bitmap = s.photo.original.asImageBitmap(),
                                     contentDescription = "Original photo",
-                                    modifier = Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(12.dp)),
+                                    modifier = Modifier.fillMaxWidth().aspectRatio(1f).photoFrame(12.dp),
                                 )
                                 Text("Original", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 4.dp))
                             }
                             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                                 Box(
-                                    Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(12.dp)),
+                                    Modifier.fillMaxWidth().aspectRatio(1f).photoFrame(12.dp),
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     if (shown != null) Image(bitmap = shown.asImageBitmap(), contentDescription = "Result", modifier = Modifier.fillMaxSize())
@@ -205,7 +206,7 @@ fun EditScreen(
                             Modifier
                                 .fillMaxWidth()
                                 .aspectRatio(1f)
-                                .clip(RoundedCornerShape(12.dp)),
+                                .photoFrame(12.dp),
                             contentAlignment = Alignment.Center,
                         ) {
                             if (shown != null) {

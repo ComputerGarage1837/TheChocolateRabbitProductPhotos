@@ -34,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import com.chocolaterabbit.productphotos.ui.theme.photoFrame
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -89,7 +90,7 @@ fun PhotoViewerScreen(path: String, photoStore: PhotoStore, onBack: () -> Unit) 
                 model = photo.file,
                 contentDescription = photo.name,
                 contentScale = ContentScale.Fit,
-                modifier = Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(12.dp)),
+                modifier = Modifier.fillMaxWidth().aspectRatio(1f).photoFrame(12.dp),
             )
             Text(
                 DateFormat.getDateTimeInstance().format(Date(photo.takenAt)),

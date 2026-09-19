@@ -29,12 +29,10 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -48,6 +46,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import com.chocolaterabbit.productphotos.ui.theme.photoFrame
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Surface
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -108,35 +110,28 @@ fun HomeScreen(
                 }
             )
         },
-        floatingActionButton = {
-            Column(horizontalAlignment = Alignment.End) {
-                ExtendedFloatingActionButton(
-                    onClick = {
-                        batchPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                    },
-                    containerColor = MaterialTheme.colorScheme.secondary,
-                    contentColor = MaterialTheme.colorScheme.onSecondary,
-                    icon = { Icon(Icons.Default.Collections, contentDescription = null) },
-                    text = { Text("Batch") },
-                )
-                Spacer(Modifier.height(12.dp))
-                SmallFloatingActionButton(
-                    onClick = {
-                        picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                    },
-                    containerColor = MaterialTheme.colorScheme.secondary,
-                    contentColor = MaterialTheme.colorScheme.onSecondary,
+        bottomBar = {
+            Surface(color = MaterialTheme.colorScheme.primary, tonalElevation = 3.dp) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    Icon(Icons.Default.PhotoLibrary, contentDescription = "Import from gallery")
+                    ActionButton(
+                        label = "Batch",
+                        icon = Icons.Default.Collections,
+                        modifier = Modifier.weight(1f),
+                    ) { batchPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+                    ActionButton(
+                        label = "From gallery",
+                        icon = Icons.Default.PhotoLibrary,
+                        modifier = Modifier.weight(1f),
+                    ) { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+                    ActionButton(
+                        label = "Take photo",
+                        icon = Icons.Default.PhotoCamera,
+                        modifier = Modifier.weight(1f),
+                    ) { onTakePhoto() }
                 }
-                Spacer(Modifier.height(12.dp))
-                ExtendedFloatingActionButton(
-                    onClick = onTakePhoto,
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    icon = { Icon(Icons.Default.PhotoCamera, contentDescription = null) },
-                    text = { Text("Take photo") },
-                )
             }
         }
     ) { padding ->
@@ -145,7 +140,7 @@ fun HomeScreen(
         if (photos.isEmpty()) {
             Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
                 Text(
-                    "No product photos yet.\n\nTap \"Take photo\" to shoot one, the gallery button to use a photo already on this phone, or \"Batch\" to do many at once.",
+                    "No product photos yet.\n\nUse the buttons below: \"Take photo\" to shoot one, \"From gallery\" for a photo already on this phone, or \"Batch\" to do many at once.",
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.bodyLarge,
                 )
@@ -154,7 +149,7 @@ fun HomeScreen(
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 120.dp),
+                contentPadding = PaddingValues(8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
@@ -165,7 +160,7 @@ fun HomeScreen(
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .aspectRatio(1f)
-                            .clip(RoundedCornerShape(10.dp))
+                            .photoFrame()
                             .clickable { onOpenPhoto(photo) },
                     )
                 }
@@ -207,6 +202,32 @@ private fun ModelBanner(state: ModelState, onRetry: () -> Unit) {
                 }
                 ModelState.Ready -> Unit
             }
+        }
+    }
+}
+
+/** One of the three uniform buttons in the bottom bar. */
+@Composable
+private fun ActionButton(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.height(64.dp),
+        shape = RoundedCornerShape(14.dp),
+        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.onPrimary,
+            contentColor = MaterialTheme.colorScheme.primary,
+        ),
+        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 6.dp),
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(22.dp))
+            Spacer(Modifier.height(4.dp))
+            Text(label, style = MaterialTheme.typography.labelMedium, maxLines = 1)
         }
     }
 }
