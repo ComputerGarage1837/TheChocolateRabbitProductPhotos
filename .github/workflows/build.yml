@@ -111,6 +111,7 @@ jobs:
           cp "$APK" "$OUT"
           echo "path=$OUT" >> "$GITHUB_OUTPUT"
           echo "sha256=$(sha256sum "$OUT" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          echo "size=$(stat -c%s "$OUT")" >> "$GITHUB_OUTPUT"
           echo "Built $OUT ($(stat -c%s "$OUT") bytes)"
 
       - name: Upload build artifact
@@ -147,3 +148,42 @@ jobs:
           body_path: RELEASE_NOTES.md
           files: ${{ steps.apk.outputs.path }}
           fail_on_unmatched_files: true
+
+      # The in-app updater reads release/update.json from main, so publish the
+      # feed only after the release and its APK asset exist.
+      - name: Update release feed on main
+        if: steps.rel.outputs.publish == 'true'
+        env:
+          VERSION_NAME: ${{ steps.ver.outputs.name }}
+          ASSET: ${{ steps.apk.outputs.path }}
+          SHA256: ${{ steps.apk.outputs.sha256 }}
+          SIZE: ${{ steps.apk.outputs.size }}
+        run: |
+          set -euo pipefail
+          IFS=. read -r MAJ MIN PAT <<< "$VERSION_NAME"
+          CODE=$(( ${MAJ%%[^0-9]*} * 10000 + ${MIN%%[^0-9]*} * 100 + ${PAT%%[^0-9]*} ))
+          git fetch origin main
+          git checkout -B main origin/main
+          CURRENT=$(python3 -c "import json;print(json.load(open('release/update.json'))['versionCode'])")
+          if [ "$CODE" -le "$CURRENT" ]; then
+            echo "::error::versionCode $CODE is not newer than the feed's $CURRENT; not updating release/update.json."
+            exit 1
+          fi
+          cat > release/update.json <<JSON
+          {
+            "schemaVersion": 1,
+            "packageName": "com.chocolaterabbit.productphotos",
+            "versionName": "$VERSION_NAME",
+            "versionCode": $CODE,
+            "apk": {
+              "assetName": "$ASSET",
+              "sha256": "$SHA256",
+              "sizeBytes": $SIZE
+            }
+          }
+          JSON
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add release/update.json
+          git commit -m "Publish Chocolate Rabbit Product Photos $VERSION_NAME update feed"
+          git push origin main

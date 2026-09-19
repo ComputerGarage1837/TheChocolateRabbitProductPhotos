@@ -15,6 +15,8 @@ import kotlinx.coroutines.withContext
  * bounds detection) are done once; rendering a variation is a single canvas draw.
  */
 class ProcessedPhoto(
+    /** The photo as taken (square-cropped), for the side-by-side comparison. */
+    val original: Bitmap,
     private val template: Bitmap,
     private val cutout: Bitmap,
     private val enhancedCutout: Bitmap,
@@ -45,6 +47,7 @@ class ProductPhotoPipeline(
         val template = templateStore.loadTemplate(settings.useCustomTemplate)
         val bounds = if (settings.autoFitProduct) Compositor.subjectBounds(cutout) else null
         ProcessedPhoto(
+            original = square,
             template = template,
             cutout = cutout,
             enhancedCutout = AutoEnhancer.enhance(cutout),

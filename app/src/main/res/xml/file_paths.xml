@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
     <files-path name="edited" path="edited/" />
+    <!-- Update APKs downloaded by the in-app updater -->
+    <external-files-path name="downloads" path="Download/" />
     <cache-path name="cache" path="." />
 </paths>

@@ -53,6 +53,7 @@ fun AppNavigation(container: AppContainer) {
             HomeScreen(
                 photoStore = c.photos,
                 modelInstaller = c.model,
+                settings = c.settings,
                 onTakePhoto = { nav.navigate(Routes.CAMERA) },
                 onPhotoPicked = { uri -> nav.navigate(Routes.edit(uri)) },
                 onOpenPhoto = { photo -> nav.navigate(Routes.viewer(photo.file.absolutePath)) },

@@ -48,6 +48,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import com.chocolaterabbit.productphotos.AppContainer
 import com.chocolaterabbit.productphotos.data.AppSettings
+import com.chocolaterabbit.productphotos.update.UpdateChecker
+import com.chocolaterabbit.productphotos.update.UpdateFlow
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,6 +59,10 @@ fun SettingsScreen(container: AppContainer, onBack: () -> Unit) {
     val settings by container.settings.settings.collectAsState(initial = AppSettings())
     var templateVersion by remember { mutableIntStateOf(0) }
     var message by remember { mutableStateOf<String?>(null) }
+    var checkingUpdate by remember { mutableStateOf(false) }
+    if (checkingUpdate) {
+        UpdateFlow(settings = container.settings, manual = true, onFinished = { checkingUpdate = false })
+    }
 
     val templatePreview = remember(settings.useCustomTemplate, templateVersion) {
         container.templates.loadTemplate(settings.useCustomTemplate)
@@ -189,6 +195,16 @@ fun SettingsScreen(container: AppContainer, onBack: () -> Unit) {
                 checked = settings.saveToDeviceGallery,
                 onChange = { scope.launch { container.settings.setSaveToDeviceGallery(it) } },
             )
+
+            HorizontalDivider(Modifier.padding(vertical = 24.dp))
+
+            Text("App updates", style = MaterialTheme.typography.titleMedium)
+            Text(
+                "Installed version: v${UpdateChecker.installedVersionName}. The app checks for a new version each time it starts.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Spacer(Modifier.height(8.dp))
+            Button(onClick = { checkingUpdate = true }, enabled = !checkingUpdate) { Text("Check for updates") }
         }
     }
 }

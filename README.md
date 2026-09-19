@@ -27,6 +27,9 @@ Android app that turns a phone photo of a product into a uniform website product
 2. Open the downloaded file and allow installs from this source when Android asks.
 3. First launch needs internet once so Google Play services can download the background-removal
    model. After that the app works offline.
+4. Future updates install from inside the app: it checks the release feed on start, shows the
+   changelog, downloads the APK with a progress bar, verifies its SHA-256 and hands it to Android
+   to install. Settings also has a "Check for updates" button. See `UPDATE_FORMAT.md`.
 
 Minimum Android version is 7.0 (API 24). The phone needs Google Play services.
 
@@ -35,7 +38,8 @@ Minimum Android version is 7.0 (API 24). The phone needs Google Play services.
 Every push to `main` builds a signed release APK with GitHub Actions
 (`.github/workflows/build.yml`). When `main` carries a `VERSION_NAME` (in `gradle.properties`)
 that has no release yet, the workflow creates the `vX.Y.Z` tag and a GitHub Release with the APK
-attached and the matching `CHANGELOG.md` section as its notes.
+attached and the matching `CHANGELOG.md` section as its notes, then commits the matching
+`release/update.json` (with SHA-256 and size) to `main` for the in-app updater.
 
 To ship a new version:
 

@@ -2,6 +2,20 @@
 
 Each `## vX.Y.Z` section becomes the release notes for that version.
 
+## v1.0.4 — 2026-09-19
+
+### Added
+- In-app updates. The app checks for a new version on start and offers to download and install
+  it, with release notes, a progress bar and a "skip this version" option. There is also a
+  "Check for updates" button in Settings.
+- "Compare with original" switch on the review screen shows the photo as taken next to the result.
+
+### Improved
+- Product outlines again. The cut-out now learns the backdrop colours from the photo and keeps
+  any connected part of the product that clearly is not backdrop, even when the model missed
+  the whole part (a lid, a label, a ribbon, a differently coloured wrapper). Small gaps and
+  enclosed holes in the outline are filled. Shadows stay out.
+
 ## v1.0.3 — 2026-09-19
 
 ### Changed

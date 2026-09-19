@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -27,6 +29,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -85,6 +88,7 @@ fun EditScreen(
     var brightness by remember { mutableIntStateOf(0) }
     var rendered by remember { mutableStateOf<Bitmap?>(null) }
     var reloadKey by remember { mutableIntStateOf(0) }
+    var compare by remember { mutableStateOf(false) }
 
     val modelState by container.model.state.collectAsState()
 
@@ -128,7 +132,7 @@ fun EditScreen(
         }
     ) { padding ->
         Column(
-            Modifier.fillMaxSize().padding(padding).padding(16.dp),
+            Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             when (val s = state) {
@@ -174,24 +178,53 @@ fun EditScreen(
 
                 is EditState.Ready -> {
                     val shown = rendered
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(1f)
-                            .clip(RoundedCornerShape(12.dp)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        if (shown != null) {
-                            Image(
-                                bitmap = shown.asImageBitmap(),
-                                contentDescription = "Result",
-                                modifier = Modifier.fillMaxSize(),
-                            )
-                        } else {
-                            CircularProgressIndicator()
+                    if (compare) {
+                        // Original on the left, result on the right.
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Image(
+                                    bitmap = s.photo.original.asImageBitmap(),
+                                    contentDescription = "Original photo",
+                                    modifier = Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(12.dp)),
+                                )
+                                Text("Original", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 4.dp))
+                            }
+                            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                                Box(
+                                    Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(12.dp)),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    if (shown != null) Image(bitmap = shown.asImageBitmap(), contentDescription = "Result", modifier = Modifier.fillMaxSize())
+                                    else CircularProgressIndicator()
+                                }
+                                Text("Result", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 4.dp))
+                            }
+                        }
+                    } else {
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(1f)
+                                .clip(RoundedCornerShape(12.dp)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            if (shown != null) {
+                                Image(
+                                    bitmap = shown.asImageBitmap(),
+                                    contentDescription = "Result",
+                                    modifier = Modifier.fillMaxSize(),
+                                )
+                            } else {
+                                CircularProgressIndicator()
+                            }
                         }
                     }
-                    Spacer(Modifier.height(20.dp))
+                    Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text("Compare with original", style = MaterialTheme.typography.bodyMedium)
+                        Spacer(Modifier.weight(1f))
+                        Switch(checked = compare, onCheckedChange = { compare = it })
+                    }
+                    Spacer(Modifier.height(12.dp))
 
                     SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                         SegmentedButton(
@@ -230,7 +263,7 @@ fun EditScreen(
                         modifier = Modifier.fillMaxWidth(),
                     )
 
-                    Spacer(Modifier.weight(1f))
+                    Spacer(Modifier.height(24.dp))
 
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         OutlinedButton(onClick = onRetake, modifier = Modifier.weight(1f), enabled = !saving) {

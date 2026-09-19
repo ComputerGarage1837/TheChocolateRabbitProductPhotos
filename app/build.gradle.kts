@@ -28,6 +28,8 @@ android {
         targetSdk = 35
         versionCode = versionCodeFrom(versionNameProp)
         versionName = versionNameProp
+
+        buildConfigField("String", "GITHUB_REPO", "\"${prop("GITHUB_REPO", "ComputerGarage1837/TheChocolateRabbitProductPhotos")}\"")
     }
 
     signingConfigs {
@@ -60,6 +62,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"

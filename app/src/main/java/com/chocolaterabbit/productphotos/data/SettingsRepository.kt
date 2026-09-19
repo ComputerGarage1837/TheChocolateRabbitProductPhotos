@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -26,6 +27,8 @@ data class AppSettings(
     val saveToDeviceGallery: Boolean = true,
     /** 0 = tight, 1 = balanced, 2 = generous. Generous keeps more of the product at the edges. */
     val cutoutSensitivity: Int = 1,
+    /** Version name the user chose to skip in the update prompt, or empty. */
+    val skippedUpdateVersion: String = "",
 )
 
 class SettingsRepository(private val context: Context) {
@@ -37,6 +40,7 @@ class SettingsRepository(private val context: Context) {
         val FILL_PERCENT = intPreferencesKey("product_fill_percent")
         val SAVE_TO_GALLERY = booleanPreferencesKey("save_to_device_gallery")
         val CUTOUT_SENSITIVITY = intPreferencesKey("cutout_sensitivity")
+        val SKIPPED_UPDATE = stringPreferencesKey("skipped_update_version")
     }
 
     val settings: Flow<AppSettings> = context.dataStore.data.map { p ->
@@ -47,6 +51,7 @@ class SettingsRepository(private val context: Context) {
             productFillPercent = p[Keys.FILL_PERCENT] ?: 80,
             saveToDeviceGallery = p[Keys.SAVE_TO_GALLERY] ?: true,
             cutoutSensitivity = p[Keys.CUTOUT_SENSITIVITY] ?: 1,
+            skippedUpdateVersion = p[Keys.SKIPPED_UPDATE] ?: "",
         )
     }
 
@@ -64,6 +69,9 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setSaveToDeviceGallery(value: Boolean) =
         context.dataStore.edit { it[Keys.SAVE_TO_GALLERY] = value }
+
+    suspend fun setSkippedUpdateVersion(value: String) =
+        context.dataStore.edit { it[Keys.SKIPPED_UPDATE] = value }
 
     suspend fun setCutoutSensitivity(value: Int) =
         context.dataStore.edit { it[Keys.CUTOUT_SENSITIVITY] = value.coerceIn(0, 2) }

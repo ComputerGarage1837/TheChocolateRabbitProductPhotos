@@ -55,6 +55,10 @@ import com.chocolaterabbit.productphotos.data.PhotoStore
 import com.chocolaterabbit.productphotos.data.SavedPhoto
 import com.chocolaterabbit.productphotos.processing.ModelInstaller
 import com.chocolaterabbit.productphotos.processing.ModelState
+import com.chocolaterabbit.productphotos.data.SettingsRepository
+import com.chocolaterabbit.productphotos.update.UpdateFlow
+
+private var updateCheckedThisProcess = false
 
 /** Landing screen: the gallery of finished product photos plus the capture buttons. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,6 +66,7 @@ import com.chocolaterabbit.productphotos.processing.ModelState
 fun HomeScreen(
     photoStore: PhotoStore,
     modelInstaller: ModelInstaller,
+    settings: SettingsRepository,
     onTakePhoto: () -> Unit,
     onPhotoPicked: (Uri) -> Unit,
     onOpenPhoto: (SavedPhoto) -> Unit,
@@ -70,6 +75,13 @@ fun HomeScreen(
     var photos by remember { mutableStateOf<List<SavedPhoto>>(emptyList()) }
     LaunchedEffect(Unit) { photos = photoStore.listPhotos(); modelInstaller.ensureInstalled() }
     val modelState by modelInstaller.state.collectAsState()
+
+    // Silent update check once per app start.
+    var checkUpdates by remember { mutableStateOf(!updateCheckedThisProcess) }
+    if (checkUpdates) {
+        UpdateFlow(settings = settings, manual = false, onFinished = { checkUpdates = false })
+        updateCheckedThisProcess = true
+    }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri != null) onPhotoPicked(uri)
