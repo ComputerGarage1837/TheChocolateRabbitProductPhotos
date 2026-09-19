@@ -2,6 +2,12 @@
 
 Each `## vX.Y.Z` section becomes the release notes for that version.
 
+## v1.0.11 — 2026-09-19
+
+### Changed
+- App icon is now The Chocolate Rabbit logo (gold badge on the dark brand background), as an
+  adaptive icon so it fits whatever shape the phone's launcher uses.
+
 ## v1.0.10 — 2026-09-19
 
 ### Fixed
