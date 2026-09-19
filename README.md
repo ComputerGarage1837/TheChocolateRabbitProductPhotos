@@ -20,16 +20,59 @@ Android app that turns a phone photo of a product into a uniform website product
   80% of the frame; adjustable).
 - **Also save to phone gallery**: on by default.
 
-## Building
+## Install
+
+1. Download the latest `Chocolate-Rabbit-Product-Photos-<version>.apk` from the
+   [Releases](../../releases) page, on the phone itself.
+2. Open the downloaded file and allow installs from this source when Android asks.
+3. First launch needs internet once so Google Play services can download the background-removal
+   model. After that the app works offline.
+
+Minimum Android version is 7.0 (API 24). The phone needs Google Play services.
+
+## Releases
+
+Every push to `main` builds a signed release APK with GitHub Actions
+(`.github/workflows/build.yml`). When `main` carries a `VERSION_NAME` (in `gradle.properties`)
+that has no release yet, the workflow creates the `vX.Y.Z` tag and a GitHub Release with the APK
+attached and the matching `CHANGELOG.md` section as its notes.
+
+To ship a new version:
+
+1. Bump `VERSION_NAME` in `gradle.properties` (for example `1.0.1`).
+2. Add a `## v1.0.1 — date` section to `CHANGELOG.md`.
+3. Push to `main`. The release appears a few minutes later.
+
+### Signing key (one-time setup)
+
+Android only installs a newer APK over an older one when both are signed with the same key.
+Until the key is configured the workflow signs with a temporary key and prints a warning, so the
+APK installs but each later version needs the previous one uninstalled first.
+
+Create a permanent key once and store it in the repository secrets
+(Settings > Secrets and variables > Actions > Repository secrets):
+
+```
+keytool -genkeypair -v -keystore chocolaterabbit-release.jks -alias chocolaterabbit \
+  -keyalg RSA -keysize 2048 -validity 10000
+base64 -w0 chocolaterabbit-release.jks
+```
+
+| Secret | Value |
+|---|---|
+| `KEYSTORE_BASE64` | the base64 output above |
+| `KEYSTORE_PASSWORD` | the keystore password you chose |
+| `KEY_ALIAS` | optional, defaults to `chocolaterabbit` |
+| `KEY_PASSWORD` | optional, defaults to `KEYSTORE_PASSWORD` |
+
+Keep the `.jks` file somewhere safe. If it is lost, future versions cannot update over installed ones.
+
+## Building locally
 
 Requirements: Android Studio Ladybug (2024.2) or newer, JDK 17, Android SDK 35.
 
 - Open the project folder in Android Studio and press **Run**, or
 - from a terminal: `./gradlew assembleDebug` and install `app/build/outputs/apk/debug/app-debug.apk`.
-
-Minimum Android version is 7.0 (API 24). The phone needs Google Play services; the segmentation
-model is downloaded automatically the first time the app runs (needs internet once), after that
-everything works offline.
 
 ## Project layout
 

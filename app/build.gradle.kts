@@ -4,6 +4,20 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+fun prop(name: String, default: String): String =
+    (project.findProperty(name) as String?)?.takeIf { it.isNotBlank() } ?: default
+
+/** 1.2.3 -> 10203, so every version bump yields a strictly larger versionCode. */
+fun versionCodeFrom(name: String): Int {
+    val parts = name.split(".").map { it.takeWhile { c -> c.isDigit() }.ifEmpty { "0" }.toInt() }
+    val major = parts.getOrElse(0) { 0 }
+    val minor = parts.getOrElse(1) { 0 }
+    val patch = parts.getOrElse(2) { 0 }
+    return major * 10000 + minor * 100 + patch
+}
+
+val versionNameProp = prop("VERSION_NAME", "1.0.0")
+
 android {
     namespace = "com.chocolaterabbit.productphotos"
     compileSdk = 35
@@ -12,14 +26,29 @@ android {
         applicationId = "com.chocolaterabbit.productphotos"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = versionCodeFrom(versionNameProp)
+        versionName = versionNameProp
+    }
+
+    signingConfigs {
+        create("release") {
+            val ksPath = System.getenv("KEYSTORE_PATH")
+            if (!ksPath.isNullOrBlank()) {
+                storeFile = file(ksPath)
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (!System.getenv("KEYSTORE_PATH").isNullOrBlank()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
     compileOptions {
