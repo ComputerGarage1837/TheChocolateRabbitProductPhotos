@@ -91,6 +91,9 @@ dependencies {
 
     // On-device subject segmentation (background removal). Model is downloaded via Google Play services.
     implementation("com.google.android.gms:play-services-mlkit-subject-segmentation:16.0.0-beta1")
+    // ModuleInstall API: lets the app request the segmentation model download itself
+    // (Play only does it automatically for apps installed from the Play Store).
+    implementation("com.google.android.gms:play-services-base:18.5.0")
 
     implementation("io.coil-kt:coil-compose:2.7.0")
 }

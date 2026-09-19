@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,6 +36,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -49,6 +51,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.chocolaterabbit.productphotos.AppContainer
 import com.chocolaterabbit.productphotos.data.AppSettings
+import com.chocolaterabbit.productphotos.processing.ModelState
 import com.chocolaterabbit.productphotos.processing.ProcessedPhoto
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -81,11 +84,21 @@ fun EditScreen(
     var saving by remember { mutableStateOf(false) }
     var brightness by remember { mutableIntStateOf(0) }
     var rendered by remember { mutableStateOf<Bitmap?>(null) }
+    var reloadKey by remember { mutableIntStateOf(0) }
 
-    LaunchedEffect(photoUri) {
+    val modelState by container.model.state.collectAsState()
+
+    LaunchedEffect(photoUri, reloadKey) {
         state = EditState.Working
         settings = container.settings.settings.first()
         useEnhanced = settings.autoEnhanceByDefault
+        // Make sure the background-removal model is on the phone; wait for the download if not.
+        container.model.ensureInstalled()
+        val ready = container.model.state.first { it is ModelState.Ready || it is ModelState.Failed }
+        if (ready is ModelState.Failed) {
+            state = EditState.Failed(ready.message)
+            return@LaunchedEffect
+        }
         state = runCatching { container.pipeline.process(photoUri, settings) }
             .fold(
                 onSuccess = { EditState.Ready(it) },
@@ -121,10 +134,29 @@ fun EditScreen(
             when (val s = state) {
                 EditState.Working -> {
                     Box(Modifier.fillMaxWidth().aspectRatio(1f), contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CircularProgressIndicator()
-                            Spacer(Modifier.height(16.dp))
-                            Text("Removing background…")
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
+                            when (val m = modelState) {
+                                is ModelState.Downloading -> {
+                                    if (m.percent < 0) LinearProgressIndicator(Modifier.fillMaxWidth())
+                                    else LinearProgressIndicator(progress = { m.percent / 100f }, modifier = Modifier.fillMaxWidth())
+                                    Spacer(Modifier.height(16.dp))
+                                    Text(
+                                        "Downloading the background remover (one time only)" +
+                                            if (m.percent >= 0) " ${m.percent}%" else "",
+                                        textAlign = TextAlign.Center,
+                                    )
+                                }
+                                ModelState.Checking -> {
+                                    CircularProgressIndicator()
+                                    Spacer(Modifier.height(16.dp))
+                                    Text("Checking background remover…")
+                                }
+                                else -> {
+                                    CircularProgressIndicator()
+                                    Spacer(Modifier.height(16.dp))
+                                    Text("Removing background…")
+                                }
+                            }
                         }
                     }
                 }
@@ -134,7 +166,10 @@ fun EditScreen(
                         Text(s.message, textAlign = TextAlign.Center, modifier = Modifier.padding(24.dp))
                     }
                     Spacer(Modifier.height(16.dp))
-                    Button(onClick = onRetake) { Text("Try another photo") }
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        OutlinedButton(onClick = onRetake) { Text("Try another photo") }
+                        Button(onClick = { container.model.ensureInstalled(); reloadKey++ }) { Text("Try again") }
+                    }
                 }
 
                 is EditState.Ready -> {
@@ -230,8 +265,9 @@ private fun friendlyError(t: Throwable): String {
     return when {
         msg.contains("No subject", ignoreCase = true) ->
             "Couldn't find a product in that photo. Try again with the product clearly in the square."
-        msg.contains("model", ignoreCase = true) || msg.contains("download", ignoreCase = true) ->
-            "The background-removal model is still downloading. Make sure the phone is online, wait a minute, then try again."
+        msg.contains("model", ignoreCase = true) || msg.contains("download", ignoreCase = true) ||
+            msg.contains("module", ignoreCase = true) ->
+            "The background remover isn't ready on this phone yet. Tap \"Try again\" to download it (needs internet once).\n\n($msg)"
         else -> "Something went wrong while processing the photo.\n\n$msg"
     }
 }

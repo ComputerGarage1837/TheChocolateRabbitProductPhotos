@@ -2,6 +2,14 @@
 
 Each `## vX.Y.Z` section becomes the release notes for that version.
 
+## v1.0.1 — 2026-09-19
+
+### Fixed
+- The background-removal model was never downloaded on phones where the app was installed from
+  the APK rather than the Play Store, so every photo failed with "model is still downloading".
+  The app now downloads it itself on first launch, with a progress bar on the home screen, and
+  the review screen waits for it instead of failing.
+
 ## v1.0.0 — 2026-09-19
 
 ### Added
