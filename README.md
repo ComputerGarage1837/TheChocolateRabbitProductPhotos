@@ -3,8 +3,9 @@
 Android app that turns a phone photo of a product into a uniform website product shot:
 
 1. Take a photo (or import one from the phone).
-2. The background is removed on-device with ML Kit subject segmentation. Only the background
-   is touched; the product pixels are kept exactly as shot.
+2. The background is removed on-device with the ISNet segmentation model (bundled in the app,
+   run with ONNX Runtime). Only the background is touched; the product pixels are kept exactly
+   as shot.
 3. The product is placed on the shop's square template (bundled cream background, 1512 x 1512).
 4. Optional one-tap **Auto clean-up** (levels, gentle sharpening, a touch of saturation) and a
    **Brightness** slider. Both apply to the product only, never the template.
@@ -25,13 +26,13 @@ Android app that turns a phone photo of a product into a uniform website product
 1. Download the latest `Chocolate-Rabbit-Product-Photos-<version>.apk` from the
    [Releases](../../releases) page, on the phone itself.
 2. Open the downloaded file and allow installs from this source when Android asks.
-3. First launch needs internet once so Google Play services can download the background-removal
-   model. After that the app works offline.
+3. Everything runs on the phone; no internet is needed except for update checks. The APK is
+   about 190 MB because the segmentation model is bundled.
 4. Future updates install from inside the app: it checks the release feed on start, shows the
    changelog, downloads the APK with a progress bar, verifies its SHA-256 and hands it to Android
    to install. Settings also has a "Check for updates" button. See `UPDATE_FORMAT.md`.
 
-Minimum Android version is 7.0 (API 24). The phone needs Google Play services.
+Minimum Android version is 7.0 (API 24).
 
 ## Releases
 
@@ -78,6 +79,14 @@ Requirements: Android Studio Ladybug (2024.2) or newer, JDK 17, Android SDK 35.
 - Open the project folder in Android Studio and press **Run**, or
 - from a terminal: `./gradlew assembleDebug` and install `app/build/outputs/apk/debug/app-debug.apk`.
 
+The model file is not in git (too large). Before a local build, download it once:
+
+```
+mkdir -p app/src/main/assets/models
+curl -L -o app/src/main/assets/models/isnet-general-use.onnx \
+  https://github.com/danielgatis/rembg/releases/download/v0.0.0/isnet-general-use.onnx
+```
+
 ## Project layout
 
 ```
@@ -88,7 +97,9 @@ app/src/main/java/com/chocolaterabbit/productphotos/
   data/TemplateStore.kt         bundled + custom template handling
   data/PhotoStore.kt            in-app gallery + export to phone gallery
   processing/ImageLoader.kt     decode, fix rotation, centre-crop to 1:1
-  processing/BackgroundRemover.kt  ML Kit segmentation -> alpha mask
+  processing/OnnxSegmenter.kt   ISNet model via ONNX Runtime -> per-pixel confidence
+  processing/MaskRefiner.kt     edge snapping, hole fill, island removal
+  processing/BackgroundRemover.kt  confidence -> alpha mask
   processing/AutoEnhancer.kt    product-only auto clean-up
   processing/Compositor.kt      places the cut-out on the template (+ brightness)
   processing/ProductPhotoPipeline.kt

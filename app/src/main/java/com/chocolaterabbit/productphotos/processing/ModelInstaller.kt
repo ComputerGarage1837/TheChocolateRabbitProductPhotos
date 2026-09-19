@@ -1,91 +1,82 @@
 package com.chocolaterabbit.productphotos.processing
 
 import android.content.Context
-import com.google.android.gms.common.moduleinstall.InstallStatusListener
-import com.google.android.gms.common.moduleinstall.ModuleInstall
-import com.google.android.gms.common.moduleinstall.ModuleInstallRequest
-import com.google.android.gms.common.moduleinstall.ModuleInstallStatusUpdate
-import com.google.android.gms.common.moduleinstall.ModuleInstallStatusUpdate.InstallState
-import com.google.mlkit.vision.segmentation.subject.SubjectSegmentation
-import com.google.mlkit.vision.segmentation.subject.SubjectSegmenterOptions
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+import java.io.File
 
-/** Whether the on-device background-removal model is on the phone yet. */
+/** Whether the background-removal model is loaded and ready. */
 sealed interface ModelState {
     data object Checking : ModelState
     data object Ready : ModelState
-    /** percent is -1 while the download size is not known yet. */
+    /** percent is -1 while the amount of work is not known. */
     data class Downloading(val percent: Int) : ModelState
     data class Failed(val message: String) : ModelState
 }
 
 /**
- * The segmentation model is provided by Google Play services and downloaded once (about 10 MB).
- * Play services only fetches it automatically for apps installed from the Play Store, so a
- * side-loaded APK has to ask for it. This class does that and reports progress.
+ * The segmentation model ships inside the APK (assets/models). On first launch it is copied out
+ * to internal storage once (ONNX Runtime wants a file path), then loaded. Nothing is downloaded.
  */
 class ModelInstaller(context: Context) {
 
     private val appContext = context.applicationContext
-    private val client = ModuleInstall.getClient(appContext)
-    private val segmenter = SubjectSegmentation.getClient(
-        SubjectSegmenterOptions.Builder().enableForegroundConfidenceMask().build()
-    )
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val _state = MutableStateFlow<ModelState>(ModelState.Checking)
     val state: StateFlow<ModelState> = _state
 
-    /** Checks availability and starts the download if needed. Safe to call repeatedly. */
+    @Volatile
+    var segmenter: OnnxSegmenter? = null
+        private set
+
+    /** Prepares and loads the model. Safe to call repeatedly. */
     fun ensureInstalled() {
         val current = _state.value
         if (current is ModelState.Ready || current is ModelState.Downloading) return
         _state.value = ModelState.Checking
-
-        client.areModulesAvailable(segmenter)
-            .addOnSuccessListener { response ->
-                if (response.areModulesAvailable()) {
-                    _state.value = ModelState.Ready
-                } else {
-                    startDownload()
-                }
+        scope.launch {
+            try {
+                val file = extractModel()
+                _state.value = ModelState.Downloading(-1)
+                segmenter = OnnxSegmenter(file)
+                _state.value = ModelState.Ready
+            } catch (e: Throwable) {
+                _state.value = ModelState.Failed(
+                    "Couldn't load the background remover.\n\n(${e.message ?: e.javaClass.simpleName})"
+                )
             }
-            .addOnFailureListener { e ->
-                _state.value = ModelState.Failed(describe(e))
-            }
+        }
     }
 
-    private fun startDownload() {
-        _state.value = ModelState.Downloading(-1)
-        val listener = InstallStatusListener { update: ModuleInstallStatusUpdate ->
-            when (update.installState) {
-                InstallState.STATE_COMPLETED -> _state.value = ModelState.Ready
-                InstallState.STATE_FAILED -> _state.value =
-                    ModelState.Failed("Google Play services could not download the model. Check the connection and try again.")
-                InstallState.STATE_CANCELED -> _state.value = ModelState.Failed("Model download was cancelled.")
-                else -> {
-                    val info = update.progressInfo
-                    val pct = if (info != null && info.totalBytesToDownload > 0)
-                        (info.bytesDownloaded * 100 / info.totalBytesToDownload).toInt() else -1
-                    _state.value = ModelState.Downloading(pct)
+    /** Copies the model out of the APK into internal storage, with progress. */
+    private fun extractModel(): File {
+        val dir = File(appContext.filesDir, "models").apply { mkdirs() }
+        val target = File(dir, OnnxSegmenter.MODEL_FILE)
+        val fd = appContext.assets.openFd("models/${OnnxSegmenter.MODEL_FILE}")
+        val total = fd.length
+        fd.close()
+        if (target.exists() && target.length() == total) return target
+
+        val tmp = File(dir, "${OnnxSegmenter.MODEL_FILE}.part")
+        appContext.assets.open("models/${OnnxSegmenter.MODEL_FILE}").use { input ->
+            tmp.outputStream().use { out ->
+                val buf = ByteArray(1 shl 20)
+                var copied = 0L
+                while (true) {
+                    val n = input.read(buf)
+                    if (n <= 0) break
+                    out.write(buf, 0, n)
+                    copied += n
+                    if (total > 0) _state.value = ModelState.Downloading((copied * 100 / total).toInt())
                 }
             }
         }
-        val request = ModuleInstallRequest.newBuilder()
-            .addApi(segmenter)
-            .setListener(listener)
-            .build()
-        client.installModules(request)
-            .addOnSuccessListener { response ->
-                // Already present (race with another download) -> ready right away.
-                if (response.areModulesAlreadyInstalled()) _state.value = ModelState.Ready
-            }
-            .addOnFailureListener { e -> _state.value = ModelState.Failed(describe(e)) }
-    }
-
-    private fun describe(e: Exception): String {
-        val msg = e.message ?: e.javaClass.simpleName
-        return "Could not get the background-removal model from Google Play services.\n\n" +
-            "This phone needs Google Play services and an internet connection for the first launch only.\n\n($msg)"
+        if (!tmp.renameTo(target)) throw IllegalStateException("Could not store the model")
+        return target
     }
 }

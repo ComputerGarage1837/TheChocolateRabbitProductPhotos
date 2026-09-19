@@ -1,2 +1,2 @@
-# Keep ML Kit classes
--keep class com.google.mlkit.** { *; }
+# ONNX Runtime uses JNI; keep its classes.
+-keep class ai.onnxruntime.** { *; }

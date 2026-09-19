@@ -38,8 +38,9 @@ class ProcessedPhoto(
 class ProductPhotoPipeline(
     private val context: Context,
     private val templateStore: TemplateStore,
+    model: ModelInstaller,
 ) {
-    private val remover = BackgroundRemover()
+    private val remover = BackgroundRemover { model.segmenter }
 
     suspend fun process(photo: Uri, settings: AppSettings): ProcessedPhoto = withContext(Dispatchers.Default) {
         val square = ImageLoader.loadSquare(context, photo)
@@ -56,5 +57,4 @@ class ProductPhotoPipeline(
         )
     }
 
-    fun close() = remover.close()
 }

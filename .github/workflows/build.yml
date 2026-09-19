@@ -100,6 +100,16 @@ jobs:
             echo "KEY_PASSWORD=temp-password" >> "$GITHUB_ENV"
           fi
 
+      # The 176 MB segmentation model is too large for git, so the build fetches it and
+      # bundles it into the APK. Pinned by SHA-256 so a changed upstream file fails the build.
+      - name: Fetch segmentation model
+        run: |
+          set -euo pipefail
+          mkdir -p app/src/main/assets/models
+          curl -sSL --retry 3 -o app/src/main/assets/models/isnet-general-use.onnx \
+            https://github.com/danielgatis/rembg/releases/download/v0.0.0/isnet-general-use.onnx
+          echo "60920e99c45464f2ba57bee2ad08c919a52bbf852739e96947fbb4358c0d964a  app/src/main/assets/models/isnet-general-use.onnx" | sha256sum -c -
+
       - name: Build release APK
         run: ./gradlew --no-daemon assembleRelease -PVERSION_NAME="${{ steps.ver.outputs.name }}"
 

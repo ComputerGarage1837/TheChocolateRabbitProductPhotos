@@ -67,6 +67,10 @@ android {
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
+    androidResources {
+        // The 176 MB model must stay uncompressed so it can be streamed out of the APK quickly.
+        noCompress += "onnx"
+    }
 }
 
 dependencies {
@@ -92,11 +96,8 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:$camerax")
     implementation("androidx.camera:camera-view:$camerax")
 
-    // On-device subject segmentation (background removal). Model is downloaded via Google Play services.
-    implementation("com.google.android.gms:play-services-mlkit-subject-segmentation:16.0.0-beta1")
-    // ModuleInstall API: lets the app request the segmentation model download itself
-    // (Play only does it automatically for apps installed from the Play Store).
-    implementation("com.google.android.gms:play-services-base:18.5.0")
+    // On-device background removal: ISNet (DIS) model bundled in assets, run with ONNX Runtime.
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.19.2")
 
     implementation("io.coil-kt:coil-compose:2.7.0")
 }

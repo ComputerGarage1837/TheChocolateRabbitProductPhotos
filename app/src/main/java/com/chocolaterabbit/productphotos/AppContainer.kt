@@ -12,6 +12,6 @@ class AppContainer(context: Context) {
     val settings = SettingsRepository(context)
     val templates = TemplateStore(context)
     val photos = PhotoStore(context)
-    val pipeline = ProductPhotoPipeline(context, templates)
     val model = ModelInstaller(context).also { it.ensureInstalled() }
+    val pipeline = ProductPhotoPipeline(context, templates, model)
 }

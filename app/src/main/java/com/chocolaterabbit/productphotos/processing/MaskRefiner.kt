@@ -31,12 +31,14 @@ object MaskRefiner {
         val colourFar: Float    // distance that counts as definitely product
         val reachFraction: Float // how far from the model's mask reclaimed pixels may extend (fraction of side)
         val closeFraction: Float // gap-closing radius (fraction of side)
+        /** Colour-based reclaim is only for plain backdrops; on a busy background it pulls in clutter. */
+        val useBackdropReclaim: Boolean
 
         init {
             when (sensitivity.coerceIn(0, 2)) {
-                0 -> { mlLow = 0.40f; mlHigh = 0.70f; colourNear = 4.0f; colourFar = 7.0f; reachFraction = 0.10f; closeFraction = 0.006f }
-                2 -> { mlLow = 0.12f; mlHigh = 0.45f; colourNear = 2.0f; colourFar = 4.0f; reachFraction = 0.35f; closeFraction = 0.015f }
-                else -> { mlLow = 0.22f; mlHigh = 0.55f; colourNear = 2.8f; colourFar = 5.0f; reachFraction = 0.22f; closeFraction = 0.010f }
+                0 -> { mlLow = 0.45f; mlHigh = 0.75f; colourNear = 4.0f; colourFar = 7.0f; reachFraction = 0.10f; closeFraction = 0.004f; useBackdropReclaim = false }
+                2 -> { mlLow = 0.15f; mlHigh = 0.45f; colourNear = 2.8f; colourFar = 5.0f; reachFraction = 0.20f; closeFraction = 0.010f; useBackdropReclaim = true }
+                else -> { mlLow = 0.30f; mlHigh = 0.60f; colourNear = 3.0f; colourFar = 5.5f; reachFraction = 0.15f; closeFraction = 0.006f; useBackdropReclaim = false }
             }
         }
     }
@@ -52,7 +54,7 @@ object MaskRefiner {
 
         // 2 + 3. Backdrop model and reclaim of connected non-backdrop pixels.
         val grown = ml.copyOf()
-        val backdrop = Backdrop.learn(confidence, pixels, w, h)
+        val backdrop = if (tuning.useBackdropReclaim) Backdrop.learn(confidence, pixels, w, h) else null
         if (backdrop != null) {
             val colourAlpha = FloatArray(n) { i -> smoothstep(backdrop.distance(pixels[i]), tuning.colourNear, tuning.colourFar) }
             val radius = max(4, (side * tuning.reachFraction).toInt())

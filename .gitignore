@@ -10,3 +10,6 @@
 .cxx/
 *.apk
 *.aab
+
+# Segmentation model: fetched by the release workflow (see .github/workflows/build.yml), not stored in git.
+/app/src/main/assets/models/

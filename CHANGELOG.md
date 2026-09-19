@@ -2,6 +2,19 @@
 
 Each `## vX.Y.Z` section becomes the release notes for that version.
 
+## v1.0.5 — 2026-09-19
+
+### Changed
+- New background-removal model, built into the app. Google's Play services model kept dropping
+  large parts of products (a whole side of a case, for example). The app now bundles the ISNet
+  dichotomous segmentation model and runs it with ONNX Runtime, entirely on the phone. Tested
+  on a real product photo that failed before: the whole product is kept with clean edges.
+  Nothing is downloaded any more and Google Play services is no longer needed.
+- Because the model is inside the app, this update is about 190 MB. First launch after
+  installing takes a few extra seconds while the model is unpacked.
+- "Balanced" cut-out no longer uses the colour-based reclaim (it pulled in background clutter
+  on busy backgrounds). "Generous" still does, for plain backdrops.
+
 ## v1.0.4 — 2026-09-19
 
 ### Added

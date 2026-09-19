@@ -145,7 +145,7 @@ fun EditScreen(
                                     else LinearProgressIndicator(progress = { m.percent / 100f }, modifier = Modifier.fillMaxWidth())
                                     Spacer(Modifier.height(16.dp))
                                     Text(
-                                        "Downloading the background remover (one time only)" +
+                                        "Setting up the background remover" +
                                             if (m.percent >= 0) " ${m.percent}%" else "",
                                         textAlign = TextAlign.Center,
                                     )
@@ -298,9 +298,8 @@ private fun friendlyError(t: Throwable): String {
     return when {
         msg.contains("No subject", ignoreCase = true) ->
             "Couldn't find a product in that photo. Try again with the product clearly in the square."
-        msg.contains("model", ignoreCase = true) || msg.contains("download", ignoreCase = true) ||
-            msg.contains("module", ignoreCase = true) ->
-            "The background remover isn't ready on this phone yet. Tap \"Try again\" to download it (needs internet once).\n\n($msg)"
+        msg.contains("not loaded", ignoreCase = true) ->
+            "The background remover is still loading. Tap \"Try again\" in a moment.\n\n($msg)"
         else -> "Something went wrong while processing the photo.\n\n$msg"
     }
 }

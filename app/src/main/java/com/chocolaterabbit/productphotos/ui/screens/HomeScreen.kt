@@ -160,7 +160,7 @@ fun HomeScreen(
     }
 }
 
-/** Shown until the background-removal model is on the phone (first launch only). */
+/** Shown until the background-removal model is loaded (a few seconds; longer on first launch). */
 @Composable
 private fun ModelBanner(state: ModelState, onRetry: () -> Unit) {
     if (state is ModelState.Ready) return
@@ -176,7 +176,7 @@ private fun ModelBanner(state: ModelState, onRetry: () -> Unit) {
                     LinearProgressIndicator(Modifier.fillMaxWidth())
                 }
                 is ModelState.Downloading -> {
-                    Text("Downloading background remover (one time only)", style = MaterialTheme.typography.titleSmall)
+                    Text("Setting up the background remover (first launch only)", style = MaterialTheme.typography.titleSmall)
                     Spacer(Modifier.height(8.dp))
                     if (state.percent < 0) {
                         LinearProgressIndicator(Modifier.fillMaxWidth())
