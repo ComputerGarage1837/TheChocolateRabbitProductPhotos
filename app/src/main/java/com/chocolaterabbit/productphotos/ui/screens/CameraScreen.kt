@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -121,7 +123,7 @@ fun CameraScreen(onCaptured: (Uri) -> Unit, onBack: () -> Unit) {
         }
 
         Row(
-            Modifier.fillMaxWidth().padding(top = 40.dp, start = 8.dp, end = 8.dp),
+            Modifier.fillMaxWidth().statusBarsPadding().padding(top = 8.dp, start = 8.dp, end = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             IconButton(onClick = onBack) {
@@ -136,7 +138,7 @@ fun CameraScreen(onCaptured: (Uri) -> Unit, onBack: () -> Unit) {
         }
 
         Column(
-            Modifier.align(Alignment.BottomCenter).padding(bottom = 48.dp),
+            Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             error?.let {

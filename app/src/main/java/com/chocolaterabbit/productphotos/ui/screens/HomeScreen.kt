@@ -48,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import com.chocolaterabbit.productphotos.ui.theme.photoFrame
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Surface
 import androidx.compose.ui.layout.ContentScale
@@ -113,7 +114,7 @@ fun HomeScreen(
         bottomBar = {
             Surface(color = MaterialTheme.colorScheme.primary, tonalElevation = 3.dp) {
                 Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 12.dp),
+                    Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 12.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     ActionButton(

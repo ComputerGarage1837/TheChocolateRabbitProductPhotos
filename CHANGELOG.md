@@ -2,6 +2,12 @@
 
 Each `## vX.Y.Z` section becomes the release notes for that version.
 
+## v1.0.10 — 2026-09-19
+
+### Fixed
+- The phone's navigation bar no longer overlaps the app's bottom buttons (home screen, batch
+  screen, camera).
+
 ## v1.0.9 — 2026-09-19
 
 ### Added
